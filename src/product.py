@@ -1,14 +1,18 @@
-# product.py - Product sitting on a display stand
+# product.py - Product shown in a slot on the display stand
+
+
 class Product:
-    def __init__(self, sku, name, price, description=""):
-        self._sku = sku
-        self._name = name
-        self._price = price
-        self._description = description
+    def __init__(self, productId, name, price, category="", promotion=""):
+        self.productId = productId
+        self.name = name
+        self.price = price
+        self.category = category
+        self.promotion = promotion
+        self.unitsSold = 0
 
-    @property
-    def sku(self):
-        return self._sku
-
-    def get_info(self):
-        return "{} - ${:.2f}\n{}".format(self._name, self._price, self._description)
+    def getInfo(self):
+        """Short text for the LCD: name, price and promotion."""
+        info = "{} ${:.2f}".format(self.name, self.price)
+        if self.promotion:
+            info += " " + self.promotion
+        return info

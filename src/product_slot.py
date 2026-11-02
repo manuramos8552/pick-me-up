@@ -1,37 +1,40 @@
-# product_slot.py - One spot on the display stand: product + sensor + outputs
+# product_slot.py - One slot on the stand: owns its sensor, light and buzzer
 import time
-from events import InteractionEvent
+from events import PickupEvent
 
 
 class ProductSlot:
-    def __init__(self, slot_id, product, sensor, outputs):
-        self._slot_id = slot_id
-        self._product = product      # aggregation: product exists on its own
-        self._sensor = sensor        # aggregation: sensor hardware
-        self._outputs = outputs      # list of OutputDevice
-        self._is_lifted = False
-        self._lifted_at = 0
+    def __init__(self, slotId, product, sensor, light, buzzer, display=None):
+        self.slotId = slotId
+        self.product = product
+        self.sensor = sensor
+        self.light = light
+        self.buzzer = buzzer
+        self._display = display      # the stand's shared screen (optional)
+        self.isLifted = False
+        self.liftTime = 0.0
 
-    def on_pick_up(self):
-        self._is_lifted = True
-        self._lifted_at = time.time()
-        for device in self._outputs:
-            device.activate()
+    def onPickup(self):
+        self.isLifted = True
+        self.liftTime = time.time()
+        self.light.on()
+        self.buzzer.beep(150)
+        if self._display:
+            self._display.showText(self.product.getInfo())
 
-    def on_put_back(self):
-        self._is_lifted = False
-        for device in self._outputs:
-            device.deactivate()
-        duration = time.time() - self._lifted_at
-        return InteractionEvent(self._product.sku, self._slot_id,
-                                self._lifted_at, duration)
+    def onReturn(self):
+        self.isLifted = False
+        self.light.off()
+        if self._display:
+            self._display.clear()
+        return PickupEvent(self.product, self.liftTime, time.time())
 
-    def check_sensor(self):
-        """Call in the main loop. Returns an InteractionEvent when a
-        pick-up finishes (product put back), otherwise None."""
-        triggered = self._sensor.is_triggered()
-        if triggered and not self._is_lifted:
-            self.on_pick_up()
-        elif not triggered and self._is_lifted:
-            return self.on_put_back()
+    def checkSensor(self):
+        """Call in the main loop. Returns a PickupEvent when the product
+        is put back, otherwise None."""
+        lifted = self.sensor.isTriggered()
+        if lifted and not self.isLifted:
+            self.onPickup()
+        elif not lifted and self.isLifted:
+            return self.onReturn()
         return None
