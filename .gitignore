@@ -1,0 +1,4 @@
+# Never commit Wi-Fi or dashboard passwords
+secrets.py
+src/secrets.py
+__pycache__/
